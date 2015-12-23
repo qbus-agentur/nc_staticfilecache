@@ -83,7 +83,7 @@ class StaticFileCache implements SingletonInterface {
 				if ((boolean)$this->configuration->get('clearCacheForAllDomains')) {
 					$this->cache->flush();
 				} else {
-					$this->cache->flushByTag('domain_' . str_replace('.', '_', GeneralUtility::getIndpEnv('TYPO3_HOST_ONLY')));
+					$this->cache->flushByTag('sfc_domain_' . str_replace('.', '_', GeneralUtility::getIndpEnv('TYPO3_HOST_ONLY')));
 				}
 				break;
 			default:
@@ -133,10 +133,9 @@ class StaticFileCache implements SingletonInterface {
 
 		if (!$ruleArguments['skipProcessing']) {
 
-			$cacheTags = array(
-				'pageId_' . $pObj->page['uid'],
-				'domain_' . str_replace('.', '_', parse_url($uri, PHP_URL_HOST)),
-			);
+			$cacheTags = $this->getPageCacheTags($pObj);
+			$cacheTags[] = 'sfc_pageId_' . $pObj->page['uid'];
+			$cacheTags[] = 'sfc_domain_' . str_replace('.', '_', parse_url($uri, PHP_URL_HOST));
 
 			// This is supposed to have "&& !$pObj->beUserLogin" in there as well
 			// This fsck's up the ctrl-shift-reload hack, so I pulled it out.
@@ -184,6 +183,24 @@ class StaticFileCache implements SingletonInterface {
 			'isStaticCached'     => $isStaticCached,
 		);
 		$this->signalDispatcher->dispatch(__CLASS__, 'postProcess', $postProcessArguments);
+	}
+
+	/**
+	 * Reads the currently set pageCacheTags from TypoScriptFrontendController.
+	 *
+	 * We need to access the protected variable $pageCacheTags via reflication since
+	 * there is no getter function available.
+	 *
+	 * And that variable holds static and dynamic added page cache tags:
+	 * a) statically configured page cache tags (pages.cache_tags)
+	 * b) dynamically configured page cache tags (using $TSFE->addCacheTags or TypoScript stdWrap.addPageCacheTags)
+	 *
+	 * @param TypoScriptFrontendController $pObj The parent object
+	 */
+	protected function getPageCacheTags(TypoScriptFrontendController &$pObj) {
+		$reflection = new \TYPO3\CMS\Extbase\Reflection\ClassReflection('TYPO3\\CMS\\Frontend\\Controller\\TypoScriptFrontendController');
+		$property = $reflection->getProperty('pageCacheTags');
+		return $property->getValue($pObj);
 	}
 
 	/**
