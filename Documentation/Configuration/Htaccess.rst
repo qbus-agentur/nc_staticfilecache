@@ -28,6 +28,8 @@ Here is a part of the gzip.realurl version:
 
    # Do not allow direct call the cache entries
    RewriteCond %{ENV:SFC_URI} ^/typo3temp/tx_ncstaticfilecache/.*
+   # You can remove the following cond on Apache >= 2.4 if you replace the [L] with [END] in the final static file RewriteRule
+   RewriteCond %{ENV:REDIRECT_STATUS} ^$
    RewriteRule .* - [F,L]
 
    # Get scheme/protocol
@@ -70,6 +72,7 @@ Here is a part of the gzip.realurl version:
    RewriteCond %{HTTP_COOKIE} !be_typo_user [NC]
 
    # Rewrite the request to the static file.
+   # Note: On Apache >= 2.4 you may use [END] instead of [L] to avoid an internal redirect
    RewriteRule .* typo3temp/tx_ncstaticfilecache/%{ENV:SFC_PROTOCOL}/%{HTTP_HOST}%{ENV:SFC_URI}%{ENV:SFC_FILE}%{ENV:SFC_GZIP} [L]
 
    ### Begin: Static File Cache (options) ####
