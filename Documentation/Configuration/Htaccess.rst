@@ -69,10 +69,6 @@ Here is a part of the gzip.realurl version:
    # end of the browser session. If you have logged out of the TYPO3 backend and are expecting to see cached pages but don't. Please close this browser settion first or remove the cookie manually or use another browser to hit your frontend.
    RewriteCond %{HTTP_COOKIE} !be_typo_user [NC]
 
-   # Check for Ctrl Shift reload
-   RewriteCond %{HTTP:Pragma} !no-cache
-   RewriteCond %{HTTP:Cache-Control} !no-cache
-
    # Rewrite the request to the static file.
    RewriteRule .* typo3temp/tx_ncstaticfilecache/%{ENV:SFC_PROTOCOL}/%{HTTP_HOST}%{ENV:SFC_URI}%{ENV:SFC_FILE}%{ENV:SFC_GZIP} [L]
 
