@@ -86,13 +86,6 @@ class StaticFileCache implements SingletonInterface {
 		$preProcessArguments = $this->signalDispatcher->dispatch(__CLASS__, 'preProcess', $preProcessArguments);
 		$uri = $preProcessArguments['uri'];
 
-		// don't continue if there is already an existing valid cache entry
-		// prevents overriding if a logged in user is checking the page in a second call
-		$previousCacheEntry = $this->cache->get($uri);
-		if (!count($previousCacheEntry['explanation']) && $previousCacheEntry['expires'] >= $GLOBALS['EXEC_TIME']) {
-			return;
-		}
-
 		// cache rules
 		$ruleArguments = array(
 			'frontendController' => $pObj,
@@ -104,6 +97,12 @@ class StaticFileCache implements SingletonInterface {
 		$explanation = $ruleArguments['explanation'];
 
 		if (!$ruleArguments['skipProcessing']) {
+			// Don't continue if there is already an existing valid cache entry and we've got an invalid now.
+			// Prevents overriding if a logged in user is checking the page in a second call
+			// see https://forge.typo3.org/issues/67526
+			if (count($explanation) && $this->hasValidCacheEntry($uri)) {
+				return;
+			}
 
 			$cacheTags = $this->getPageCacheTags($pObj);
 			$cacheTags[] = 'sfc_pageId_' . $pObj->page['uid'];
@@ -156,6 +155,21 @@ class StaticFileCache implements SingletonInterface {
 		);
 		$this->signalDispatcher->dispatch(__CLASS__, 'postProcess', $postProcessArguments);
 	}
+
+	/**
+	 * Determines whether the given $uri has a valid cache entry.
+	 *
+	 * @param     string  $uri
+	 *
+	 * @return    bool    is available and valid
+	 */
+	protected function hasValidCacheEntry($uri) {
+		$entry = $this->cache->get($uri);
+		return ($entry !== NULL &&
+			count($entry['explanation']) === 0 &&
+			$entry['expires'] >= $GLOBALS['EXEC_TIME']);
+	}
+
 
 	/**
 	 * Reads the currently set pageCacheTags from TypoScriptFrontendController.
