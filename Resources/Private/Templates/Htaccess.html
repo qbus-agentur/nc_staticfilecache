@@ -1,3 +1,11 @@
+<IfModule mod_rewrite.c>
+   <f:comment>
+     Deny direct access. That means we need to be redirected through a
+     RewriteRule (which means %{ENV:REDIRECT_STATUS} must not be empty).
+   </f:comment>
+   RewriteCond %{ENV:REDIRECT_STATUS} ^$
+   RewriteRule .* - [F,L]
+</IfModule>
 <f:if condition="{sendCacheControlHeader}">
 <IfModule mod_expires.c>
 	ExpiresActive on
